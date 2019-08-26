@@ -126,7 +126,7 @@
     </script>
     <script type="text/javascript">
         $('#logout').on('click', function() {
-            var isConfirm = ('你确定要退出吗')
+            var isConfirm = confirm('你确定要退出吗')
             if (isConfirm) {
                 $.ajax({
                     type: 'post',

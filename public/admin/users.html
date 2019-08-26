@@ -40,48 +40,50 @@
       </div> -->
             <div class="row">
                 <div class="col-md-4">
-                    <form>
+                    <form id="userForm">
                         <h2>添加新用户</h2>
                         <div class="form-group">
                             <label>头像</label>
                             <div class="form-group">
                                 <label class="form-image">
                   <input id="avatar" type="file">
-                  <img src="../assets/img/default.png">
+                  <img src="../assets/img/default.png" id="prev">
                   <i class="mask fa fa-upload"></i>
                 </label>
+                                <!-- 隐藏域 -->
+                                <input type="hidden" name="avatar" id="img">
                             </div>
                         </div>
                         <div class="form-group">
                             <label>邮箱</label>
-                            <input class="form-control" type="email" placeholder="请输入邮箱">
+                            <input class="form-control" name="email" type="email" placeholder="请输入邮箱">
                         </div>
                         <div class="form-group">
                             <label>昵称</label>
-                            <input class="form-control" type="text" placeholder="请输入昵称">
+                            <input class="form-control" name="nickName" type="text" name="nickName" placeholder="请输入昵称">
                         </div>
                         <div class="form-group">
                             <label>密码</label>
-                            <input class="form-control" type="text" placeholder="请输入密码">
+                            <input class="form-control" name="password" type="text" placeholder="请输入密码">
                         </div>
                         <div class="form-group">
                             <div class="radio-inline">
-                                <label><input type="radio">未激活</label>
+                                <label><input type="radio" name="status" value="1">未激活</label>
                             </div>
                             <div class="radio-inline">
-                                <label><input type="radio">激活</label>
+                                <label><input type="radio" checked name="status" value="0">激活</label>
                             </div>
                         </div>
                         <div class="form-group">
                             <div class="radio-inline">
-                                <label><input type="radio">超级管理员</label>
+                                <label><input type="radio" name="role" value="admin">超级管理员</label>
                             </div>
                             <div class="radio-inline">
-                                <label><input type="radio">普通用户</label>
+                                <label><input type="radio" checked name="role" value="normal">普通用户</label>
                             </div>
                         </div>
                         <div class="form-group">
-                            <button class="btn btn-primary" type="submit">添加</button>
+                            <button class="btn btn-primary" type="button" id="but">添加</button>
                         </div>
                     </form>
                 </div>
@@ -187,16 +189,16 @@
     <script src="../assets/vendors/bootstrap/js/bootstrap.js"></script>
 
     <script src="../assets/vendors/art-template/template-web.js"></script>
-    <!-- 用户显示用户列表的模板 -->
+    <!-- 显示用户列表的模板 -->
     <script type="text/html" id="userTpl">
         {{each list}}
         <tr>
             <td class="text-center"><input type="checkbox"></td>
-            <td class="text-center"><img class="avatar" src="../assets/img/default.png"></td>
+            <td class="text-center"><img class="avatar" src="{{$value.avatar}}"></td>
             <td>{{$value.email}}</td>
             <td>{{$value.nickName}}</td>
             <td>{{$value.status == 1 ? '激活' : '未激活'}}</td>
-            <td>{{$value.role == 'admin' ? '管理员' : '普通管理员'}}</td>
+            <td>{{$value.role == 'admin' ? '超级管理员' : '普通管理员'}}</td>
             <td class="text-center">
                 <a href="javascript:;" class="btn btn-default btn-xs">编辑</a>
                 <a href="javascript:;" class="btn btn-danger btn-xs">删除</a>
@@ -233,9 +235,10 @@
     <script>
         NProgress.done()
     </script>
+    <!-- 退出提示 -->
     <script type="text/javascript">
         $('#logout').on('click', function() {
-            var isConfirm = ('你确定要退出吗')
+            var isConfirm = confirm('你确定要退出吗')
             if (isConfirm) {
                 $.ajax({
                     type: 'post',
@@ -248,6 +251,58 @@
                     }
                 })
             }
+        })
+    </script>
+    <!-- 添加用户功能 -->
+    <script>
+        //当前表单发生提交行为的时候
+        $('#but').on('click', function() {
+
+            // //获取到用户在表单中输入的内容并将内容转换为字符串形式
+            var formData = $('#userForm').serialize()
+                //
+            $.ajax({
+                type: 'post',
+                url: '/users',
+                data: formData,
+                success: function(res) {
+
+
+                    userArr.push(res)
+                    render(userArr);
+
+                },
+                error: function(err) {
+                    alert('输入错误')
+                }
+            })
+
+        });
+        //头像上传功能
+        //当用户选择文化的时候
+        $('#avatar').on('change', function() {
+            //用户选择到的文件
+            // this.files[0]
+            //创建FormData对象
+            var formData = new FormData();
+            formData.append('avatar', this.files[0])
+                //发送ajax
+            $.ajax({
+                type: 'post',
+                url: '/upload',
+                data: formData,
+                //告诉ajax不要解析参数
+                processData: false,
+                //告诉ajax不需要解析请求参数的类型
+                contentType: false,
+                success: function(res) {
+                    //图像预览功能
+                    $('#img').val(res[0].avatar); //到隐藏域里
+                    $('#prev').attr('src', res[0].avatar) //doa
+
+                }
+
+            })
         })
     </script>
 </body>
