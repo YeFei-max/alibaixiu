@@ -56,34 +56,35 @@
                         </div>
                         <div class="form-group">
                             <label>邮箱</label>
-                            <input class="form-control" name="email" type="email" placeholder="请输入邮箱">
+                            <input class="form-control" name="email" type="email" id="email" placeholder="请输入邮箱">
                         </div>
                         <div class="form-group">
                             <label>昵称</label>
-                            <input class="form-control" name="nickName" type="text" name="nickName" placeholder="请输入昵称">
+                            <input class="form-control" name="nickName" id="nickName" type="text" name="nickName" placeholder="请输入昵称">
                         </div>
                         <div class="form-group">
                             <label>密码</label>
-                            <input class="form-control" name="password" type="text" placeholder="请输入密码">
+                            <input class="form-control" name="password" id="password" type="text" placeholder="请输入密码">
                         </div>
                         <div class="form-group">
                             <div class="radio-inline">
-                                <label><input type="radio" name="status" value="1">未激活</label>
+                                <label><input type="radio" id="wjh" name="status" value="1">未激活</label>
                             </div>
                             <div class="radio-inline">
-                                <label><input type="radio" checked name="status" value="0">激活</label>
+                                <label><input type="radio" id="jh" checked name="status" value="0">激活</label>
                             </div>
                         </div>
                         <div class="form-group">
                             <div class="radio-inline">
-                                <label><input type="radio" name="role" value="admin">超级管理员</label>
+                                <label><input type="radio" name="role" id="admin" value="admin">超级管理员</label>
                             </div>
                             <div class="radio-inline">
-                                <label><input type="radio" checked name="role" value="normal">普通用户</label>
+                                <label><input type="radio" checked name="role" id="normal" value="normal">普通用户</label>
                             </div>
                         </div>
                         <div class="form-group">
                             <button class="btn btn-primary" type="button" id="but">添加</button>
+                            <button class="btn btn-primary" type="button" id="addUser" style="display:none">修改</button>
                         </div>
                     </form>
                 </div>
@@ -199,8 +200,8 @@
             <td>{{$value.nickName}}</td>
             <td>{{$value.status == 1 ? '激活' : '未激活'}}</td>
             <td>{{$value.role == 'admin' ? '超级管理员' : '普通管理员'}}</td>
-            <td class="text-center">
-                <a href="javascript:;" class="btn btn-default btn-xs">编辑</a>
+            <td class="text-center" data-id="{{$value._id}}">
+                <a href="javascript:;" class="btn btn-default btn-xs edit">编辑</a>
                 <a href="javascript:;" class="btn btn-danger btn-xs">删除</a>
             </td>
         </tr>
@@ -267,10 +268,12 @@
                 data: formData,
                 success: function(res) {
 
-
+                    //重新渲染
                     userArr.push(res)
                     render(userArr);
-
+                    //清空邮箱姓名密码
+                    $('.form-control').val('')
+                    $('#prev').attr('src', '../assets/img/default.png')
                 },
                 error: function(err) {
                     alert('输入错误')
@@ -302,6 +305,69 @@
 
                 }
 
+            })
+        });
+        //完成编辑功能
+        //
+        var id;
+        $('tbody').on('click', '.edit', function() {
+
+            id = $(this).parent().attr('data-id') //获取到父元素声上的id
+
+            $('form > h2').text('修改用户');
+
+            var trObj = $(this).parents('tr');
+            $('#email').val(trObj.children().eq(2).text());
+            $('#nickName').val(trObj.children().eq(3).text());
+
+            var status = trObj.children().eq(4).text()
+            var role = trObj.children().eq(5).text()
+            var imgSrc = trObj.children().eq(1).find('img').attr('src')
+                // console.log(imgSrc);
+
+            $('#but').hide();
+            $('#addUser').show();
+
+
+            if (imgSrc) {
+                $('#prev').attr('src', imgSrc);
+                $('#img').attr('imgSrc')
+            }
+            if (status == '激活') {
+                $('#jh').prop('checked', true)
+            } else {
+                $('wjh').prop('checked', true)
+            }
+            if (role == '超级管理员') {
+                $('admin').prop('checked', true)
+            } else {
+                $('normal').prop('checked', true)
+            }
+
+        });
+        //给修改按钮注册点击事件
+        $('#addUser').on('click', function() {
+            //
+            var formData = $('form').serialize();
+            $.ajax({
+                type: 'put',
+                url: '/users/' + id,
+                data: formData,
+                success: function(res) {
+                    //通过res对象里面的_id属性的值取数组中 userArr这个数组将对应的元素找过来
+                    // var user = find(item=>item._id == res._id)
+                    var index = userArr.findIndex(item => item._id == res._id)
+                        //将res这个对象赋值给了userArr这个数组里面的指定的元素
+                    userArr[index] = res;
+                    //重新渲染数据
+                    render(userArr)
+
+                    $('#but').show();
+                    $('#addUser').hide();
+                    $('form > h2').text('添加新用户');
+                    $('.form-control').val('')
+                    $('#prev').attr('src', '../assets/img/default.png')
+                }
             })
         })
     </script>
