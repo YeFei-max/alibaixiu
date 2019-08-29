@@ -1,9 +1,10 @@
-<script src="/login/status">
-</script>
+<script src="/login/status"></script>
 <script>
-    if (!isLogin) location.href = 'login.html'
+    // console.log(isLogin);
+    if (!isLogin) {
+        location.href = "login.html";
+    }
 </script>
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 
@@ -45,7 +46,7 @@
                         <input id="title" class="form-control input-lg" name="title" type="text" placeholder="文章标题">
                     </div>
                     <div class="form-group">
-                        <label for="content">标题</label>
+                        <label for="content">内容</label>
                         <textarea id="content" class="form-control input-lg" name="content" cols="30" rows="10" placeholder="内容"></textarea>
                     </div>
                 </div>
@@ -53,29 +54,31 @@
                     <div class="form-group">
                         <label for="feature">特色图像</label>
                         <!-- show when image chose -->
-                        <img class="help-block thumbnail" style="display: none">
+                        <img class="help-block thumbnail" style="display: none" id="prev">
                         <input id="feature" class="form-control" name="feature" type="file">
+                        <input id="img" name="thumbnail" type="hidden">
                     </div>
                     <div class="form-group">
                         <label for="category">所属分类</label>
                         <select id="category" class="form-control" name="category">
-              <option value="1">未分类</option>
-              <option value="2">潮生活</option>
+              <option value="">未分类</option>
+              <!-- <option value="2">潮生活</option> -->
             </select>
                     </div>
                     <div class="form-group">
                         <label for="created">发布时间</label>
-                        <input id="created" class="form-control" name="created" type="datetime-local">
+                        <input id="created" class="form-control" name="createAt" type="datetime-local">
                     </div>
                     <div class="form-group">
                         <label for="status">状态</label>
-                        <select id="status" class="form-control" name="status">
-              <option value="drafted">草稿</option>
-              <option value="published">已发布</option>
+                        <select id="status" class="form-control" name="state">
+              <option value="0">草稿</option>
+              <option value="1">已发布</option>
             </select>
                     </div>
                     <div class="form-group">
-                        <button class="btn btn-primary" type="submit">保存</button>
+                        <button class="btn btn-primary" type="button" id="pAdd">保存</button>
+                        <button class="btn btn-primary" type="button" id="pEdit" style="display:none">编辑</button>
                     </div>
                 </div>
             </form>
@@ -121,26 +124,159 @@
 
     <script src="../assets/vendors/jquery/jquery.js"></script>
     <script src="../assets/vendors/bootstrap/js/bootstrap.js"></script>
-    <script>
-        NProgress.done()
+    <script src="../assets/vendors/art-template/template-web.js"></script>
+
+    <!-- 构建模板 -->
+
+    <script type="text/html" id="cTpl">
+        {{each list}}
+        <option value="{{$value._id}}">{{$value.title}}</option>
+        {{/each}}
     </script>
-    <script type="text/javascript">
+
+
+    <script>
         $('#logout').on('click', function() {
-            var isConfirm = confirm('你确定要退出吗')
+            var isConfirm = confirm('您真的要退出吗?');
             if (isConfirm) {
+                // alert('用户点击了确认按钮')
                 $.ajax({
                     type: 'post',
                     url: '/logout',
                     success: function() {
-                        location.href = 'login.html'
+                        location.href = 'login.html';
                     },
                     error: function() {
-                        alert('失败')
+                        alert('退出失败')
                     }
                 })
             }
+        });
+        //向服务器发送请求 索要用户的信息
+        $.ajax({
+            type: 'get',
+            url: '/users/' + userId,
+            success: function(res) {
+                $('.avatar').attr('src', res.avatar)
+                $('.profile .name').html(res.nickName)
+            }
+        })
+
+        // 完成图片上传功能 
+        $('#feature').on('change', function() {
+            // 创建FormData对象
+            var formData = new FormData();
+            formData.append('avatar', this.files[0]);
+            // 发送ajax
+            $.ajax({
+                type: 'post',
+                url: '/upload',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    $('#img').val(res[0].avatar);
+                    $('#prev').show().attr('src', res[0].avatar);
+                }
+            })
+        });
+
+
+        // 获取所有的分类  
+        $.ajax({
+            type: 'get',
+            url: '/categories',
+            success: function(res) {
+                var str = template('cTpl', {
+                    list: res
+                });
+                // console.log(str);
+                $('#category').append(str);
+            }
+        });
+
+        // 添加文章功能 
+        $('#pAdd').on('click', function() {
+            var formData = $('form').serialize();
+
+            $.ajax({
+                type: 'post',
+                url: '/posts',
+                data: formData,
+                success: function(res) {
+                    location.href = 'posts.html';
+                }
+            });
+
+        });
+        //获取编辑的id
+        var id = getUrlParams('id');
+        if (id != -1) {
+            //编辑功能 根据传递来的id去请求服务器
+            $.ajax({
+                type: 'get',
+                url: '/posts/' + id,
+                success: function(res) {
+                    $('#title').val(res.title)
+                    $('#content').val(res.content)
+                    $('h1').text('编辑文章');
+                    //浏览的图片
+                    $('#prev').show().attr('src', res.thumbnail)
+                    $('#img').val(res.thumbnail);
+                    //将对应的分类显示出来
+                    $('#category > option').each((index, item) => {
+                        /*   判断opation里面的value属性值与res.category的是值是否相等
+                        如果相等九九表示是这个分类 就给其设置selected */
+                        if ($(item).attr('value') == res.category) {
+                            $(item).prop('selected', true);
+                        }
+                    });
+                    //
+                    $('#status > option').each((index, item) => {
+                        /*   判断opation里面的value属性值与res.status的是值是否相等
+                      如果相等九九表示是这个分类 就给其设置selected */
+                        if ($(item).attr('value') == res.state) {
+                            $(item).prop('selected', true);
+                        }
+                    });
+                    //
+                    $('#creted').val(res.createAt && substr(0, 16));
+                    //将保存按钮隐藏 将编辑按钮显示出来
+                    $('#pAdd').hide();
+                    $('#pEdit').show();
+                }
+            })
+        }
+
+        //从浏览器的地址栏中获取查询参数
+        function getUrlParams(name) {
+            var paramsAry = location.search.substr(1).split('&');
+            //循环数据
+            for (var i = 0; i < paramsAry.length; i++) {
+                var tmp = paramsAry[i].split('=');
+                if (tmp[0] = name) {
+                    return tmp[1]
+                }
+
+            }
+            return -1
+        }
+        //给编辑注册点击事件 发送ajax 完成对文章的编辑功能 当编辑完成 我们需要让页面跳转到posthtml
+        $('#pEdit').on('click', function() {
+            $.ajax({
+                type: 'put',
+                url: '/posts/' + id,
+                data: $('form').serialize(),
+                success: function(res) {
+                    location.href = 'posts.html'
+                }
+            })
         })
     </script>
+    <script>
+        NProgress.done()
+    </script>
+
 </body>
 
 </html>
