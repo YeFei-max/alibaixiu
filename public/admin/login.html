@@ -63,9 +63,16 @@
                     password: $('#password').val()
                 },
                 success: function(res) {
-                    console.log(res);
-                    //用户名和密码输入正确
-                    location.href = 'index.html'
+                    // console.log(res);
+                    //如果是普通用户 就跳转到网站的首页面
+                    if (res.role == 'admin') {
+                        //登录成功 跳转数据管理的首页面
+                        location.href = '/admin/index.html'
+                    } else {
+                        //登录成功 
+                        location.href = '/index.html'
+                    }
+
                 },
                 error: function() {
                     $('.alert').fadeIn(1000).delay(1000).fadeOut(1000)

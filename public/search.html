@@ -12,9 +12,10 @@
     }
     // 如果是从浏览器上面直接输入的是list.html页面过来的 这个cid变量的值就是-1 如果是从index.html页面跳转过来的 它的值就不是-1 
     var cid = getUrlParams('categoryId');
-    if (cid == -1) {
-        location.href = 'index.html';
-    }
+    var key = getUrlParams('key')
+        // if (cid == -1) {
+        //     location.href = 'index.html';
+        // }
 </script>
 
 <!DOCTYPE html>
@@ -282,9 +283,9 @@
     <!-- 推荐数据展示 -->
     <script src="./assets/js/publis.js"></script>
     <script src="assets/js/recommend.js"></script>
-
-    <script type="text/html " id="newTpl">
-        <h3>{{data[0].category.title}}</h3>
+    <!-- 搜索结果模板 -->
+    <script type="text/html " id="searchTpl">
+        <!-- <h3>{{data[0].category.title}}</h3> -->
         {{each data}}
         <div class="entry ">
             <div class="head ">
@@ -318,13 +319,28 @@
             url: '/posts/category/' + cid,
             success: function(res) {
                 // console.log(res);
-                var str = template('newTpl', {
+                var str = template('searchTpl', {
                     data: res
                 });
                 // console.log(str)
                 $('#newList').html(str)
             }
         });
+    </script>
+    <!-- 获取到浏览器地址中的关键字 -->
+    <script>
+        $.ajax({
+            type: 'get',
+            url: '/posts/search/' + key,
+            success: function(res) {
+                // console.log(res);
+
+                var html = template('searchTpl', {
+                    data: res
+                })
+                $('#newList').html(html)
+            }
+        })
     </script>
 </body>
 
